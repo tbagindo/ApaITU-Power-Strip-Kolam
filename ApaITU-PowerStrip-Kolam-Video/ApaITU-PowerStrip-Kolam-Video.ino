@@ -1,5 +1,7 @@
 /*
  * #ApaITU march 2023
+ * Repo : https://github.com/tbagindo/ApaITU-Power-Strip-Kolam
+ * 
  * video #1 Project Intro & DIY Module : https://youtu.be/KCm-y2z40Z0
  * video #2 Schematic, Assembly Instruction & First Trial : https://youtu.be/-XCEHxJLOTc
  * video #3 Code Explanation : 
