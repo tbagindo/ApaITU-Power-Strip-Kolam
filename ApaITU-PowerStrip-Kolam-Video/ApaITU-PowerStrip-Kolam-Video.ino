@@ -5,6 +5,7 @@
  * video #1 Project Intro & DIY Module : https://youtu.be/KCm-y2z40Z0
  * video #2 Schematic, Assembly Instruction & First Trial : https://youtu.be/-XCEHxJLOTc
  * video #3 Code Explanation : 
+ * 
  * Components :
  * used PowerStrip 3 prong
  * 1 Wemos D1 Mini
@@ -42,11 +43,17 @@
 #define DEBUG true  //set to true for debug output, false for no debug output
 #define DEBUG_SERIAL if(DEBUG)Serial
 
-//touch sensor on D5 & D6 - false = Active LOW
+
+
+
+//touch sensor on D5 & D6 - false = turn off pullup resistor/active high
 OneButton btn1(D5,false); 
 OneButton btn2(D6,false);
 
 ESP8266WebServer server(80);
+
+
+
 
 IPAddress local_IP(192,168,2,12); 
 IPAddress gateway(192,168,2,1); 
@@ -55,15 +62,18 @@ IPAddress dns(192,168,1,200);
 
 String page = FPSTR(MAIN_PAGE); //load page from index.h
 
-//relay 1 & 2 state 0 = low  , 1 = high
+//relay 1 & 2 state 0 = OFF  , 1 = ON
 int r1State = 0;
 int r2State = 0;
 
-const uint32_t connectTimeoutMs = 5000; //wifiMulti.run(connectionTimeoutMS)
-uint32_t pMillis;   //prev Millis for WiFi state check 
-uint32_t bpMillis;  //prev Millis for led Blink on D4
+uint32_t pMillis;   // prev Millis for WiFi state check 
+uint32_t bpMillis;  // prev Millis for led Blink on D4
 uint32_t bDelay;    // blink interval
-bool bFlag = false; //blink Flag
+bool bFlag = false; // blink Flag true  >> WiFiConnected
+
+
+
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -120,7 +130,11 @@ void setup() {
   otaSetup();     //OTA
 }
 
+
+
+
 //Touch Sensor btn1 & btn2
+
 void btn1Click(){
   DEBUG_SERIAL.println("btn1 clicked  !!! " + String(r1State));
   r1State = !r1State;
@@ -132,57 +146,48 @@ void btn2Click(){
   digitalWrite(D8,r2State);
 }
 
+
+
+
+//  Create  Index.html we replace
+// @@SSID@@ with actual value
+// @@RSSI@@
+// 
+// @@RElAY1STATE@@ with "checked" for state ON or "" blank for state OFF
+// @@RElAY2STATE@@
+
 void handleRoot(){
   String s;
    s+=page;
   if(digitalRead(D7)){
-    s.replace("@@RElAY1STATE@@","");
-  }else{
     s.replace("@@RElAY1STATE@@","checked");
+  }else{
+    s.replace("@@RElAY1STATE@@","");
   }
   DEBUG_SERIAL.println(digitalRead(D7));
   
   if(digitalRead(D8)){
-    s.replace("@@RElAY2STATE@@","");
-  }else{
     s.replace("@@RElAY2STATE@@","checked");
+  }else{
+    s.replace("@@RElAY2STATE@@","");
   }
   DEBUG_SERIAL.println(digitalRead(D8));
-  
+
+  if(WiFi.status()==3){
+    s.replace("@@SSID@@",WiFi.SSID());
+    s.replace("@@RSSI@@",String(WiFi.RSSI()));
+  }else{
+    s.replace("@@SSID@@","AP not Connected");
+    s.replace("@@RSSI@@","");
+  }
   server.send(200,"text/html",s);
 }
 
-void getState1(){
-  String s = String(digitalRead(D7));
-  server.send(200,"text/plain",s);
-}
 
-void getState2(){
-  String s = String(digitalRead(D8));
-  server.send(200,"text/plain",s);
-}
 
-void getRSSI(){
-  String s="";
-  if(WiFi.status() == WL_CONNECTED){
-    s += String(WiFi.RSSI());
-  }else{
-    s +="WiFi Not Connected";
-  }
-  server.send(200,"text/plain",s);
 
-}
 
-void getSSID(){
-  String s="";
-  if(WiFi.status() == WL_CONNECTED){
-    s += WiFi.SSID();
-  }else{
-    s +="WiFi Not Connected";
-  }
-  server.send(200,"text/plain",s);
-
-}
+//turn on/off relay from slider button on webpage
 
 void relayUpdate(){
   String r = server.arg("relay");
@@ -210,13 +215,65 @@ void relayUpdate(){
 
 
 
+
+
+
+// response to XMLHttpRequest() /relay1State & /relay2State
+// setInterval every 1000ms
+// return "0" or  "1" as String
+
+void getState1(){
+  String s = String(digitalRead(D7));
+  server.send(200,"text/plain",s);
+}
+
+void getState2(){
+  String s = String(digitalRead(D8));
+  server.send(200,"text/plain",s);
+}
+
+
+
+
+
+//get WiFi Access Point connected Signal Strength (RSSI) and send back to web request
+
+void getRSSI(){
+  String s="";
+  if(WiFi.status() == WL_CONNECTED){
+    s += String(WiFi.RSSI());
+  }else{
+    s +="WiFi Not Connected";
+  }
+  server.send(200,"text/plain",s);
+
+}
+
+
+
+
+//get WiFi Access Point connected SSID and send back to web request
+
+void getSSID(){
+  String s="";
+  if(WiFi.status() == WL_CONNECTED){
+    s += WiFi.SSID();
+  }else{
+    s +="WiFi Not Connected";
+  }
+  server.send(200,"text/plain",s);
+
+}
+
+
+
 //blink D4 - flash led
 void flashBlink(){
   static int flashState;
   if(bFlag){
     bDelay=1000;
   }else{
-    bDelay=300;
+    bDelay=200;
   }
   if(millis()-bpMillis>bDelay){
     bpMillis=millis();
