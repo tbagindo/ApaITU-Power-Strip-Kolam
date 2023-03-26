@@ -45,6 +45,7 @@
 
 
 
+//Constructor touch sensor & webserver
 
 //touch sensor on D5 & D6 - false = turn off pullup resistor/active high
 OneButton btn1(D5,false); 
@@ -54,6 +55,7 @@ ESP8266WebServer server(80);
 
 
 
+//variable
 
 IPAddress local_IP(192,168,2,12); 
 IPAddress gateway(192,168,2,1); 
@@ -66,6 +68,8 @@ String page = FPSTR(MAIN_PAGE); //load page from index.h
 int r1State = 0;
 int r2State = 0;
 
+
+//loop -D4 led blynk & wifi connection state
 uint32_t pMillis;   // prev Millis for WiFi state check 
 uint32_t bpMillis;  // prev Millis for led Blink on D4
 uint32_t bDelay;    // blink interval
